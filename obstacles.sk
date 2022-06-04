@@ -180,7 +180,7 @@ command /deleteLeaderBoard:
 command /privateWorld:
     trigger:
         if {privateWorld.%player%} is not set:
-            execute console command "/mv clone world %player%"
+            execute console command "/mv clone h %player%"
             execute console command "/mv tp %player% %player%"
             execute console command "/mv confirm"
             set {_l} to location 0.5, 65.2, 0.5 in world "%player%"
