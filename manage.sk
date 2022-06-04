@@ -1,0 +1,593 @@
+options:
+
+    discordlink: ""
+    googlesheetlink: ""
+    
+    kickmessage: "You are tempbanned Appeal at https://discord.gg/UA9q9eJCpJ"
+    banmessage:  "You are perm banned Appeal at https://discord.gg/UA9q9eJCpJ"
+    
+    chatformat: "<##AAAAAA>"
+    staffChatFormat: "<##AAAAFF>"
+    donatorChatFormat: "<##FFFFBB>"
+    opChatFormat: "<##FFCCCC>"
+    
+    playerRank: "&8[<##6b8271>P&8]"
+    donatorRank: "&8[<##E3EB43>$&8]"
+    helperRank: "&8[<##36C63F>H&8]"
+    modRank: "&8[<##18137F>M&8]"
+    builderRank: "&8[<##05696B>B&8]"
+    developerRank: "&8[<##20C20E>D&8]"
+    adminRank: "&8[<##DE715A>A&8]"
+    
+    nameColour: "<##BBBBBB>"
+    
+    NMseperator: "<##999999>→"
+    
+    # ⋗ → ⋙ ☞
+    
+
+
+
+
+#player executing a command event
+on command:
+    set {_c} to full command
+    set {_commandType} to command
+    set {_player} to player
+    if {_player} is not set:
+        set {_player} to "[Console]"
+    set {_message} to "%{_player}%: /%{_c}%"
+    sendToDiscord({_message}, {commandsChannel})
+
+#prevent players from blocks
+# - ( replace method of achieving this later )
+on break:
+	if player is not op:
+		cancel event
+		send "Blocks are INVINCIBLE" to player
+
+on place:
+    player is not op:
+        if z coordinate of event-block < 6:
+            cancel event
+        else:
+            if x coordinate of event-block < -10:
+                cancel event
+            else:
+                if x coordinate of event-block > 10:
+                    cancel event
+                else:
+                    if y coordinate of event-block > 78:
+                        cancel event
+                    else:
+                        wait 15 ticks
+                        set block at event-block to yellow wool
+                        wait 10 ticks
+                        set block at event-block to orange wool
+                        wait 5 ticks
+                        set block at event-block to red wool
+                        wait 3 ticks
+                        set block at event-block to air
+
+
+
+#===========================================================
+#tempban skript
+
+
+#opens the gui that can be used to tempban players
+command /tempban <player>:
+    aliases: /ban, /b
+    trigger:
+        set {_u} to uuid of player
+        set {_u2} to uuid of arg-1
+        if {rankskript.rank.%{_u}%} >= 150:
+            if {rankskript.rank.%{_u}%} > {rankskript.rank.%{_u2}%}:
+                set metadata tag "tempban" of player to chest inventory with 5 rows named "&1&cTemp Ban"
+
+                set slot 9 of metadata tag "tempban" of player to lime wool block named "&a10m"
+                set slot 11 of metadata tag "tempban" of player to lime wool block named "&a30m"
+                set slot 13 of metadata tag "tempban" of player to lime wool block named "&a60m"
+                set slot 15 of metadata tag "tempban" of player to orange wool block named "&66h"
+                set slot 17 of metadata tag "tempban" of player to orange wool block named "&612h"
+                set slot 27 of metadata tag "tempban" of player to red wool block named "&c1d"
+                set slot 29 of metadata tag "tempban" of player to red wool block named "&c1w"
+                set slot 31 of metadata tag "tempban" of player to red wool block named "&c1mo"
+                set slot 33 of metadata tag "tempban" of player to red wool block named "&c1/2y"
+                set slot 35 of metadata tag "tempban" of player to red wool block named "&c1y"
+                set slot 36 of metadata tag "tempban" of player to barrier block named "&cCancel"
+                set slot 40 of metadata tag "tempban" of player to arg-1's skull named "&6%arg-1%" with lore "&7this guy will be banned"
+                set slot 44 of metadata tag "tempban" of player to red nether brick named "&4Perm"
+
+                open (metadata tag "tempban" of player) to player
+            else:
+                send "The player you are trying to ban is more powerful or equal in power to you! If you believe they should be banned please contact someone with more power." to player
+        else:
+            send "You dont have the power to do this! Submit a report and our staff will review it ASAP" to player
+#determines what happend when you click any inventory slot in the tempban gui
+on inventory click:
+
+    if event-inventory = (metadata tag "tempban" of player): 
+    
+        cancel event
+        
+        set {_p} to uncoloured name of slot 40 of event-inventory parsed as player
+        
+        if index of event-slot is 9:
+        
+            tempban(10 irl minutes, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 11:
+        
+            tempban(30 irl minutes, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 13:
+        
+            tempban(1 irl hour, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 15:
+        
+            tempban(6 irl hours, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 17:
+        
+            tempban(12 irl hours, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 27:
+        
+            tempban(1 irl day, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 29:
+        
+            tempban(7 irl days, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 31:
+        
+            tempban(30 irl days, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 33:
+        
+            tempban(183 irl days, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 35:
+        
+            tempban(365 irl days, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 36:
+        
+            close player's inventory
+            
+        else if index of event-slot is 44:
+        
+            execute console command "/ban %{_p}% %{dbanmessage}%"
+            close player's inventory
+        
+        
+#kicks a player and sets their tempban timer  
+function tempban(t: timespan, p: player):
+
+    kick {_p} due to {@kickmessage}
+    set {_u} to {_p}'s uuid
+    set {banskript.timebanned.%{_u}%} to now
+    set {banskript.banlength.%{_u}%} to {_t}
+    
+    set {banskript.banned.%{_u}%} to 1
+    
+
+#checks if a player should still be banned
+function checkban(p: player):
+
+    set {_u} to {_p}'s uuid
+    set {_r} to difference between now and {banskript.timebanned.%{_u}%}
+    
+    if {_r} < {banskript.banlength.%{_u}%}:
+    
+        kick {_p} due to {@kickmessage}
+        
+    else:
+    
+        set {banskript.banned.%{_u}%} to 0
+        delete {banskript.banlength.%{_u}%}
+        delete {banskript.timebanned.%{_u}%}
+        
+
+#checks wether a player should be allowed to join the server    
+on join:
+
+    set {_u} to player's uuid
+    if {banskript.banned.%{_u}%} = 1:
+    
+        checkban(player)
+
+    set {_message} to "[+] %player%"
+    sendToDiscord("%{_message}%",{joinLeaveChannel})
+
+
+#unbans any tempbanned player
+command /untempban <offline player>:
+    permission: op
+    trigger:
+        set {banskript.banlength.%arg-1's uuid%} to 2 irl seconds
+
+#===========================================================   
+        
+        
+#===========================================================
+#tempmute skript
+
+
+#opens the gui to tempmute a player
+command /tempmute <player>:
+    aliases: /mute, /m
+    trigger:
+        if {rankskript.rank.%{_u}%} >= 100:
+            if {rankskript.rank.%{_u}%} > {rankskript.rank.%{_u2}%}:
+    
+                set metadata tag "tempmute" of player to chest inventory with 5 rows named "&1&cMute"
+
+                set slot 9 of metadata tag "tempmute" of player to lime wool block named "&a10m"
+                set slot 11 of metadata tag "tempmute" of player to lime wool block named "&a30m"
+                set slot 13 of metadata tag "tempmute" of player to lime wool block named "&a60m"
+                set slot 15 of metadata tag "tempmute" of player to orange wool block named "&66h"
+                set slot 17 of metadata tag "tempmute" of player to orange wool block named "&612h"
+                set slot 27 of metadata tag "tempmute" of player to red wool block named "&c1d"
+                set slot 29 of metadata tag "tempmute" of player to red wool block named "&c1w"
+                set slot 31 of metadata tag "tempmute" of player to red wool block named "&c1mo"
+                set slot 33 of metadata tag "tempmute" of player to red wool block named "&c1/2y"
+                set slot 35 of metadata tag "tempmute" of player to red wool block named "&c1y"
+                set slot 36 of metadata tag "tempmute" of player to barrier block named "&cCancel"
+                set slot 40 of metadata tag "tempmute" of player to arg-1's skull named "&6%arg-1%" with lore "&7this guy will be muted"
+
+                open (metadata tag "tempmute" of player) to player
+        
+
+#what to do when a player clicks each slot in the tempmute gui
+on inventory click:
+
+    if event-inventory = (metadata tag "tempmute" of player): 
+    
+        cancel event
+        
+        set {_p} to uncoloured name of slot 40 of event-inventory parsed as player
+        
+
+        if index of event-slot is 9:
+        
+            tempmute(10 irl minutes, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 11:
+        
+            tempmute(30 irl minutes, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 13:
+        
+            tempmute(1 irl hour, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 15:
+        
+            tempmute(6 irl hours, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 17:
+        
+            tempmute(12 irl hours, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 27:
+        
+            tempmute(1 irl day, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 29:
+        
+            tempmute(7 irl days, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 31:
+        
+            tempmute(30 irl days, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 33:
+        
+            tempmute(183 irl days, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 35:
+        
+            tempmute(365 irl days, {_p})
+            close player's inventory
+            
+        else if index of event-slot is 36:
+        
+            close player's inventory
+        
+        
+#tempmutes a player and starts their tempmute timer
+function tempmute(t: timespan, p: player):
+
+    set {_u} to {_p}'s uuid
+    set {muteskript.mutetime.%{_u}%} to now
+    set {muteskript.mutelength.%{_u}%} to {_t}
+    
+    set {muteskript.muted.%{_u}%} to 1
+    
+
+#checks if a player should still be muted
+function checkmute(p: player):
+
+    set {_u} to {_p}'s uuid
+    set {_r} to difference between now and {muteskript.mutetime.%{_u}%}
+        
+    if {_r} >= {muteskript.mutelength.%{_u}%}:
+    
+        set {muteskript.muted.%{_u}%} to 0
+        
+        delete {muteskript.mutelength.%{_u}%}
+        delete {muteskript.mutetime.%{_u}%}
+
+
+#checks wether a player should be allowed to chat
+on chat:
+
+    set {_p} to player
+    set {_u} to player's uuid
+    set {_m} to message
+    set {_discordMessage} to "%player%: %message%"
+    sendToDiscord("%{_discordMessage}%",{chatChannel})
+    cancel event
+    
+
+    if {muteskript.muted.%{_u}%} is set:
+    
+        if {muteskript.muted.%{_u}%} = 0:
+        
+            message({_m}, {_p})
+            
+    else:
+    
+        set {muteskript.muted.%{_u}%} to 0
+        message({_m}, {_p})
+    
+
+#unmutes a player        
+command /unmute <offline player>:
+    permission: op
+    trigger:
+        
+        set {_u} to arg-1's uuid
+        delete {muteskript.mutetime.%{_u}%}
+        delete {muteskript.mutelength.%{_u}%}
+        
+        set {muteskript.muted.%{_u}%} to 0
+
+
+#send the appropriate message based on a players rank and wether or not they are muted
+function message(s: string, p: player):
+
+    set {_n} to name of {_p}
+    set {_u} to {_p}'s uuid
+
+    send formatted "%{rank.%{_u}%}% %{@nameColour}%%{_n}% %{@NMseperator}% %{chatCol.%{_u}%}%%{_s}%" to all players
+#=========================================================== 
+
+
+#===========================================================
+#ranks skript
+#sets a players rank on join
+on join:
+
+    set {_p} to player
+    set {_u} to {_p}'s uuid
+    
+    if {rankskript.rank.%{_u}%} is not set:
+    
+        set {rankskript.rank.%{_u}%} to 0
+    
+    changeRank({rankskript.rank.%{_u}%}, {_p})
+
+#message and other when players leave the server
+on quit:
+    set {_message} to "[-] %player%"
+    sendToDiscord("%{_message}%",{joinLeaveChannel})
+    
+
+#manually gives a player a rank
+command /rank <offline player> <integer>:
+    permission: op
+    trigger: 
+        set {_u} to uuid of arg-1
+        changeRank(arg-2, arg-1)
+        set {rankskript.rank.%{_u}%} to arg-2
+
+
+#adds all ranks to a list that can be displayed by any player
+on load:
+    
+    add 0 to {rankskript::rankNumbers}
+    add 50 to {rankskript::rankNumbers}
+    add 100 to {rankskript::rankNumbers}
+    add 150 to {rankskript::rankNumbers}
+    add 200 to {rankskript::rankNumbers}
+    add 250 to {rankskript::rankNumbers}
+    add 1000 to {rankskript::rankNumbers}
+    
+    set {rankskript::rankNumbers::0} to "&80 - %{@playerRank}% &8- Player"
+    set {rankskript::rankNumbers::50} to "&850 - %{@donatorRank}% &8- Donator"
+    set {rankskript::rankNumbers::100} to "&8100 - %{@helperRank}% &8- Helper"
+    set {rankskript::rankNumbers::150} to "&8150 - %{@modRank}% &8- Moderator"
+    set {rankskript::rankNumbers::200} to "&8200 - %{@builderRank}% &8- Builder"
+    set {rankskript::rankNumbers::250} to "&8250 - %{@developerRank}% &8- Developer"
+    set {rankskript::rankNumbers::1000} to "&c1000 &8 - %{@adminRank}% &8- Admin"
+
+
+#displays a list of all the ranks in this format - "number -  how players rank will be displayed - what the rank is" e.g. "1000 - [A] - Admin"   
+command /ranks:
+    trigger:
+    
+        loop {rankskript::rankNumbers::*}:
+        
+            send "%loop-value%" to player
+
+
+#changes a players rank
+function changeRank(r: integer, p: player):
+
+    set {_u} to {_p}'s uuid
+    set {_n} to {_p}'s name
+    set {rank.%{_u}%} to integerToRank({_r})
+    set tablist name of {_p} to "%{rank.%{_u}%}% %{@nameColour}%%{_n}%"
+    set {chatCol.%{_u}%} to integerToChat({_r})
+    set {rankskript.rank.%{_u}%} to {_r}
+    
+    
+#parses an integer to a rank
+function integerToRank(i: integer) :: string:
+
+    if {_i} < 50:
+    
+        return {@playerRank}
+        
+    if {_i} < 100:
+    
+        return {@donatorRank}
+
+    if {_i} < 150:
+    
+        return {@helperRank}
+        
+    if {_i} < 200:
+    
+        return {@modRank}
+
+    if {_i} < 250:
+
+        return {@builderRank}
+
+    if {_i} < 1000:
+
+        return {@developerRank}
+  
+    if {_i} >= 1000:
+    
+        return {@adminRank}
+
+
+#parses an integer to a chat colour    
+function integerToChat(i: integer) :: string:
+
+    if {_i} = 0:
+    
+        return {@chatformat}
+        
+    if {_i} = 50:
+    
+        return {@donatorChatFormat}
+        
+    if 50 < {_i}:
+    
+        if {_i} < 1000:
+    
+            return {@staffChatFormat}
+        
+    if {_i} = 1000:
+    
+        return {@opChatFormat}
+        
+    return {@chatformat}
+
+
+#allows players to view their rank number
+command /staffPower:
+    trigger:
+        set {_u} to uuid of player
+        if {rankskript.rank.%{_u}%} < 100:
+            send "Your staff power is %{rankskript.rank.%{_u}%}% because you are not staff!"
+        else:
+            if {rankskript.rank.%{_u}%} < 150:
+                set {_d} to difference between {rankskript.rank.%{_u}%} and 150
+                send "Your staff power is %{rankskript.rank.%{_u}%}%, %{_d}% points to next rank!"
+            else:
+                if {rankskript.rank.%{_u}%} < 200:
+                    set {_d} to difference between {rankskript.rank.%{_u}%} and 200
+                    send "Your staff power is %{rankskript.rank.%{_u}%}%, %{_d}% points to next rank!"
+                else:
+                    if {rankskript.rank.%{_u}%} < 250:
+                        set {_d} to difference between {rankskript.rank.%{_u}%} and 250
+                        send "Your staff power is %{rankskript.rank.%{_u}%}%, %{_d}% points to next rank!"
+                    else:
+                        if {rankskript.rank.%{_u}%} < 1000:
+                            set {_d} to difference between {rankskript.rank.%{_u}%} and 1000
+                            send "Your staff power is %{rankskript.rank.%{_u}%}%, %{_d}% points to next rank!"
+                        else:
+                            send "Your staff power is %{rankskript.rank.%{_u}%}%, nice work!"
+            
+
+#command to slightly promote a staff member:
+command /promote <offline player> <integer>:
+    permission: op
+    trigger:
+        set {_u} to uuid of arg-1
+        add arg-2 to {rankskript.rank.%{_u}%}
+        send "Congratulations! You have just been awarded %arg-2% staff points by %name of player%" to arg-1
+        send "Promoted %arg-1% by %arg-2% staff points!"
+        changeRank({rankskript.rank.%{_u}%}, arg-1)
+#===========================================================
+
+
+#===========================================================
+#media commands
+
+
+#displays the link for the discord server
+command /discordLink:
+    aliases: /discord, /dc
+    trigger:
+        send "<link:https://discord.gg/UA9q9eJCpJ>Click to join the discord<reset>" to player
+
+
+#displays the link for the google form (for staff applications)
+command /apply:
+    trigger:
+        send {@googlesheetlink} to player
+#===========================================================
+        
+        
+    
+command /togglepvp:
+    trigger:
+        if {pvp::%player's uuid%} is not set:
+            set {pvp::%player's uuid%} to 0
+            send "pvp toggled off" to player
+        else:
+            if {pvp::%player's uuid%} is 0:
+                set {pvp::%player's uuid%} to 1
+                send "pvp toggled on" to player
+            else:
+                set {pvp::%player's uuid%} to 0
+                send "pvp toggled off" to player
+
+on damage:
+    if damage cause is attack:
+        if {pvp::%victim's uuid%} is 0:
+            cancel event
+        else:
+            if {pvp::%attacker's uuid%} is 0:
+                cancel event
+
+on drop:
+    player is not op:
+        cancel event

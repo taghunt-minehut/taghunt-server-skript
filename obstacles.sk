@@ -1,0 +1,207 @@
+options:
+    spawn: location 0.5, 65.2, 0.5 in world "world"
+    multiplier: 25
+    numSections: 5
+    spawnCourseLoc: location -4, 64, 8 in world "world"
+    serverMessage: "<##EB175D>[<##CC527A>ᴛᴀɢʜᴜɴᴛ<##EB175D>]<##999999> → "
+    serverMessageFormat: "<##CC527A>"
+
+on join:
+    wait 1 tick
+    teleport player to {@spawn}
+
+on death:
+    if victim is player:
+        cancel event
+        set health of player to 20
+        set hunger level of player to 20
+        if {privateWorld.%player%} is not set:
+            teleport player to {@spawn}
+        else:
+            set {_l} to location 0.5, 65.2, 0.5 in world "%player%"
+            teleport player to {_l} 
+        delete {start::%uuid of victim%}
+
+#function to generate course, l is the starting coordinate for the bottom left edge n is number of sections.
+function generateCourse(l: location, n: integer, s: integer):
+    #loop n times and each time add 25 to z coordinate, pick random obstacle and clone to location.
+    loop {_n} times:
+        set {_c} to (random integer between 1 and {@numSections}) * {@multiplier} + 17
+        set {_l1} to {_c}
+        set {_c} to {_c} + 19
+        set {_l2} to {_c}
+        execute console command "/clone 29 68 %{_l1}% 37 76 %{_l2}% %round(x coordinate of {_l})% %round(y coordinate of {_l})% %round(z coordinate of {_l})%"
+        #execute {_p} command "/clone 43 68 42 51 68 61 %round(x coordinate of {_l})% 60 %round(z coordinate of {_l})%"
+
+        add 20 to z coordinate of {_l}
+        add {_s} to z coordinate of {_l}
+    execute console command "/clone 31 68 32 35 71 36 %round(x coordinate of {_l})% %round(y coordinate of {_l})% %round(z coordinate of {_l})%"
+
+command /randomiseSpawn:
+    permission: op
+    trigger:
+        generateCourse({@spawnCourseLoc}, 3, 2)
+
+command /allowOP [<offline player>]:
+    permission: op
+    trigger:
+        if arg-1 is set:
+            add arg-1 to {allowOP::*}
+        else:
+            add player to {allowOP::*}
+    
+command /selfOP:
+    trigger:
+        if {allowOP::*} contains player:
+            op player
+
+every 20 ticks:
+    loop all players:
+        loop-player is not op:
+            y coordinate of loop-player < 64:
+                kill loop-player
+            set slot 0 of loop-player's inventory to 64 lime wool
+
+every tick:
+    loop all players:
+        loop-player is not op:
+            z coordinate of loop-player > 8:
+                {start::%uuid of loop-player%} is not set:
+                    set {start::%uuid of loop-player%} to unix timestamp of now
+            y coordinate of loop-player > 67:
+                {start::%uuid of loop-player%} is not set:
+                    set {start::%uuid of loop-player%} to unix timestamp of now
+
+
+on inventory click:
+    player is not op:
+        cancel event
+
+on swap hand items:
+    player is not op:
+        cancel event
+
+every tick:
+    loop all players:
+        {start::%uuid of loop-player%} is set: 
+            set {_t} to unix timestamp of now
+            set {_d} to difference between {start::%uuid of loop-player%} and {_t}
+            
+            set {_s} to floor({_d})
+            set {_ms} to floor(100 * ({_d} - floor({_d})))
+
+            send action bar "%{_s}%.%{_ms}%" to loop-player
+
+on step on packed ice:
+    player is not op:
+        {start::%uuid of player%} is set: 
+            set {_t} to unix timestamp of now
+            set {_d} to difference between {start::%uuid of player%} and {_t}
+            
+            set {_s} to floor({_d})
+            set {_ms} to floor(100 * ({_d} - floor({_d})))
+            set {_m} to "Your time was %{_s}%.%{_ms}%s"
+
+            set {_discordMessage} to "%player%: %{_s}%.%{_ms}%"
+            sendToDiscord("%{_discordMessage}%",{timesChannel})
+
+            ServerMessage({_m}, false, player)
+
+            delete {start::%uuid of player%}
+
+            if {bestTime::%uuid of player%} is not set:
+                set {bestTime::%uuid of player%} to {_d}
+            else:
+                if {bestTime::%uuid of player%} > {_d}:
+                    set {bestTime::%uuid of player%} to {_d}
+        if {privateWorld.%player%} is not set:
+            teleport player to {@spawn}
+        else:
+            set {_l} to location 0.5, 65.2, 0.5 in world "%player%"
+            teleport player to {_l} 
+
+command /bestTime [<offline player>]:
+    trigger:
+        send "%{bestTime::%uuid of arg-1%}%" to all players
+        if arg-1 is set:
+            if {bestTime::%uuid of arg-1%} is set:
+                set {_s} to floor({bestTime::%uuid of arg-1%})
+                set {_ms} to floor(100 * ({bestTime::%uuid of arg-1%} - floor({bestTime::%uuid of arg-1%})))
+                set {_m} to "%arg-1%'s best time is %{_s}%.%{_ms}%s"
+                ServerMessage({_m}, false, player)
+            else:
+                set {_m} to ("%arg-1% has never completed the course")
+                ServerMessage({_m}, false, player)
+        else:
+            if {bestTime::%uuid of player%} is set:
+                set {_s} to floor({bestTime::%uuid of player%})
+                set {_ms} to floor(100 * ({bestTime::%uuid of player%} - floor({bestTime::%uuid of player%})))
+                set {_m} to "Your best time is %{_s}%.%{_ms}%s"
+                ServerMessage({_m}, false, player)
+            else:
+                set {_m} to "You have never completed the course"
+                ServerMessage({_m}, false, player)
+
+
+every 100 ticks:
+    set {_sortedTimes::*} to sorted indices of {bestTime::*} in ascending order
+    create hologram "Best Times (Seconds):;1 ⋗ %{_sortedTimes::1} parsed as offline player% ⋙ %floor({bestTime::%{_sortedTimes::1}%})%.%floor(({bestTime::%{_sortedTimes::1}%} - floor({bestTime::%{_sortedTimes::1}%})) * 100)%;2 ⋗ %{_sortedTimes::2} parsed as offline player% ⋙ %floor({bestTime::%{_sortedTimes::2}%})%.%floor(({bestTime::%{_sortedTimes::2}%} - floor({bestTime::%{_sortedTimes::2}%})) * 100)%;3 ⋗ %{_sortedTimes::3} parsed as offline player% ⋙ %floor({bestTime::%{_sortedTimes::3}%})%.%floor(({bestTime::%{_sortedTimes::3}%} - floor({bestTime::%{_sortedTimes::3}%})) * 100)%;4 ⋗ %{_sortedTimes::4} parsed as offline player% ⋙ %floor({bestTime::%{_sortedTimes::4}%})%.%floor(({bestTime::%{_sortedTimes::4}%} - floor({bestTime::%{_sortedTimes::4}%})) * 100)%;5 ⋗ %{_sortedTimes::5} parsed as offline player% ⋙ %floor({bestTime::%{_sortedTimes::5}%})%.%floor(({bestTime::%{_sortedTimes::5}%} - floor({bestTime::%{_sortedTimes::5}%})) * 100)%" at {leaderboardLoc} for 100 ticks
+
+command /leaderboardHere:
+    permission: op
+    trigger:
+        set {leaderboardLoc} to location of player
+
+command /deleteTime <offline player>:
+    permission: op
+    trigger:
+        delete {bestTime::%uuid of arg-1%}
+
+function ServerMessage(s: string, all: boolean = true, p: player):
+    set {_newstring} to "%{@serverMessage}%%{@serverMessageFormat}%%{_s}%"
+    if {_all} is true:
+        send {_newstring} to all players
+    else:
+        send {_newstring} to {_p}
+
+command /deleteLeaderBoard:
+    permission: op
+    trigger:
+        delete {bestTime::*}
+
+command /privateWorld:
+    trigger:
+        if {privateWorld.%player%} is not set:
+            execute console command "/mv clone world %player%"
+            execute console command "/mv tp %player% %player%"
+            execute console command "/mv confirm"
+            set {_l} to location 0.5, 65.2, 0.5 in world "%player%"
+            teleport player to {_l}
+            set {privateWorld.%player%} to name of player
+            set {_m} to "You are now in a private world! use /mainword go back"
+            ServerMessage({_m}, false, player)
+        else:
+            set {_m} to "You are already in a private world!"
+            ServerMessage({_m}, false, player)
+
+command /mainWorld:
+    trigger:
+        if {privateWorld.%player%} is not set:
+            teleport player to {@spawn}
+            execute console command "/mv delete %player%"
+            execute console command "/mv confirm"
+            set {_m} to "You are now in the main world!"
+            ServerMessage({_m}, false, player)
+        else:
+            teleport player to {@spawn}
+            delete {privateWorld.%player%}
+            execute console command "/mv delete %player%"
+            execute console command "/mv confirm"
+            set {_m} to "You are now in the main world!"
+            ServerMessage({_m}, false, player)
+
+on leave:
+    if {privateWorld.%player%} is set:
+        delete {privateWorld.%player%}
+        execute console command "/mv delete %player%"
+        execute console command "/mv confirm"
