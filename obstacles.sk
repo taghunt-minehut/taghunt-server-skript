@@ -131,7 +131,6 @@ on step on packed ice:
 
 command /bestTime [<offline player>]:
     trigger:
-        send "%{bestTime::%uuid of arg-1%}%" to all players
         if arg-1 is set:
             if {bestTime::%uuid of arg-1%} is set:
                 set {_s} to floor({bestTime::%uuid of arg-1%})
