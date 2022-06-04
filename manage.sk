@@ -230,6 +230,8 @@ command /untempban <offline player>:
 command /tempmute <player>:
     aliases: /mute, /m
     trigger:
+        set {_u} to uuid of player
+        set {_u2} to uuid of arg-1
         if {rankskript.rank.%{_u}%} >= 100:
             if {rankskript.rank.%{_u}%} > {rankskript.rank.%{_u2}%}:
     

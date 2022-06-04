@@ -95,11 +95,9 @@ every tick:
         {start::%uuid of loop-player%} is set: 
             set {_t} to unix timestamp of now
             set {_d} to difference between {start::%uuid of loop-player%} and {_t}
-            
-            set {_s} to floor({_d})
-            set {_ms} to floor(100 * ({_d} - floor({_d})))
 
-            send action bar "%{_s}%.%{_ms}%" to loop-player
+
+            send action bar "%{_d}%" to loop-player
 
 on step on packed ice:
     player is not op:
@@ -107,11 +105,9 @@ on step on packed ice:
             set {_t} to unix timestamp of now
             set {_d} to difference between {start::%uuid of player%} and {_t}
             
-            set {_s} to floor({_d})
-            set {_ms} to floor(100 * ({_d} - floor({_d})))
-            set {_m} to "Your time was %{_s}%.%{_ms}%s"
+            set {_m} to "Your time was %{_d}%s"
 
-            set {_discordMessage} to "%player%: %{_s}%.%{_ms}%"
+            set {_discordMessage} to "%player%: %{_d}%"
             sendToDiscord("%{_discordMessage}%",{timesChannel})
 
             ServerMessage({_m}, false, player)
@@ -133,18 +129,16 @@ command /bestTime [<offline player>]:
     trigger:
         if arg-1 is set:
             if {bestTime::%uuid of arg-1%} is set:
-                set {_s} to floor({bestTime::%uuid of arg-1%})
-                set {_ms} to floor(100 * ({bestTime::%uuid of arg-1%} - floor({bestTime::%uuid of arg-1%})))
-                set {_m} to "%arg-1%'s best time is %{_s}%.%{_ms}%s"
+                set {_t} to {bestTime::%uuid of arg-1%}
+                set {_m} to "%arg-1%'s best time is %{_t}%s"
                 ServerMessage({_m}, false, player)
             else:
                 set {_m} to ("%arg-1% has never completed the course")
                 ServerMessage({_m}, false, player)
         else:
             if {bestTime::%uuid of player%} is set:
-                set {_s} to floor({bestTime::%uuid of player%})
-                set {_ms} to floor(100 * ({bestTime::%uuid of player%} - floor({bestTime::%uuid of player%})))
-                set {_m} to "Your best time is %{_s}%.%{_ms}%s"
+                set {_t} to {bestTime::%uuid of player%}
+                set {_m} to "Your best time is %{_t}%s"
                 ServerMessage({_m}, false, player)
             else:
                 set {_m} to "You have never completed the course"
@@ -153,7 +147,7 @@ command /bestTime [<offline player>]:
 
 every 100 ticks:
     set {_sortedTimes::*} to sorted indices of {bestTime::*} in ascending order
-    create hologram "Best Times (Seconds):;1 ⋗ %{_sortedTimes::1} parsed as offline player% ⋙ %floor({bestTime::%{_sortedTimes::1}%})%.%floor(({bestTime::%{_sortedTimes::1}%} - floor({bestTime::%{_sortedTimes::1}%})) * 100)%;2 ⋗ %{_sortedTimes::2} parsed as offline player% ⋙ %floor({bestTime::%{_sortedTimes::2}%})%.%floor(({bestTime::%{_sortedTimes::2}%} - floor({bestTime::%{_sortedTimes::2}%})) * 100)%;3 ⋗ %{_sortedTimes::3} parsed as offline player% ⋙ %floor({bestTime::%{_sortedTimes::3}%})%.%floor(({bestTime::%{_sortedTimes::3}%} - floor({bestTime::%{_sortedTimes::3}%})) * 100)%;4 ⋗ %{_sortedTimes::4} parsed as offline player% ⋙ %floor({bestTime::%{_sortedTimes::4}%})%.%floor(({bestTime::%{_sortedTimes::4}%} - floor({bestTime::%{_sortedTimes::4}%})) * 100)%;5 ⋗ %{_sortedTimes::5} parsed as offline player% ⋙ %floor({bestTime::%{_sortedTimes::5}%})%.%floor(({bestTime::%{_sortedTimes::5}%} - floor({bestTime::%{_sortedTimes::5}%})) * 100)%" at {leaderboardLoc} for 100 ticks
+    create hologram "Best Times (Seconds):;1 ⋗ %{_sortedTimes::1} parsed as offline player% ⋙ %{bestTime::%{_sortedTimes::1}%}%;2 ⋗ %{_sortedTimes::2} parsed as offline player% ⋙ %{bestTime::%{_sortedTimes::2}%}%;3 ⋗ %{_sortedTimes::3} parsed as offline player% ⋙ %{bestTime::%{_sortedTimes::3}%}%;4 ⋗ %{_sortedTimes::4} parsed as offline player% ⋙ %{bestTime::%{_sortedTimes::4}%}%;5 ⋗ %{_sortedTimes::5} parsed as offline player% ⋙ %{bestTime::%{_sortedTimes::5}%}%" at {leaderboardLoc} for 100 ticks
 
 command /leaderboardHere:
     permission: op
@@ -213,3 +207,13 @@ on leave:
         delete {privateWorld.%player%}
         execute console command "/mv delete %player%"
         execute console command "/mv confirm"
+
+command /leaderboard:
+    trigger:
+        set {_sortedTimes::*} to sorted indices of {bestTime::*} in ascending order
+        set metadata tag "leaderboard" of player to chest inventory with 5 rows named "&1&cLeaderboard"
+
+        loop 44 times:
+            set slot (loop-value - 1) of metadata tag "leaderboard" of player to ({_sortedTimes::%loop-value%} parsed as offline player)'s skull named "%loop-value%: %{_sortedTimes::%loop-value%} parsed as offline player% - %{bestTime::%{_sortedTimes::%loop-value%}%}%"
+
+        open (metadata tag "leaderboard" of player) to player
