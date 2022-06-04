@@ -23,14 +23,16 @@ on death:
         delete {start::%uuid of victim%}
 
 #function to generate course, l is the starting coordinate for the bottom left edge n is number of sections.
-function generateCourse(l: location, n: integer, s: integer):
+function generateCourse(l: location, n: integer, s: integer, p: player):
     #loop n times and each time add 25 to z coordinate, pick random obstacle and clone to location.
     loop {_n} times:
         set {_c} to (random integer between 1 and {@numSections}) * {@multiplier} + 17
         set {_l1} to {_c}
         set {_c} to {_c} + 19
         set {_l2} to {_c}
-        execute console command "/clone 29 68 %{_l1}% 37 76 %{_l2}% %round(x coordinate of {_l})% %round(y coordinate of {_l})% %round(z coordinate of {_l})%"
+        op {_p}
+        execute {_p} command "/clone 29 68 %{_l1}% 37 76 %{_l2}% %round(x coordinate of {_l})% %round(y coordinate of {_l})% %round(z coordinate of {_l})%"
+        deop {_p}
         #execute {_p} command "/clone 43 68 42 51 68 61 %round(x coordinate of {_l})% 60 %round(z coordinate of {_l})%"
 
         add 20 to z coordinate of {_l}
@@ -38,9 +40,16 @@ function generateCourse(l: location, n: integer, s: integer):
     execute console command "/clone 31 68 32 35 71 36 %round(x coordinate of {_l})% %round(y coordinate of {_l})% %round(z coordinate of {_l})%"
 
 command /randomiseSpawn:
-    permission: op
     trigger:
-        generateCourse({@spawnCourseLoc}, 3, 2)
+        set {_u} to uuid of player
+        if {privateWorld.%player%} is set:
+            generateCourse(location -4, 64, 8 in world "%player%", 3, 2, player)
+        else:
+            if {rankskript.rank.%{_u}%} >= 200:
+                generateCourse({@spawnCourseLoc}, 3, 2, player)
+            else:
+                set {_m} to "You are in the main world. If you want to randomise the course you can do so in your own world with /privateworld!"
+                ServerMessage({_m}, false, player)
 
 command /allowOP [<offline player>]:
     permission: op
