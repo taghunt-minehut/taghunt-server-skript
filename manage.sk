@@ -26,19 +26,6 @@ options:
     # ⋗ → ⋙ ☞
     
 
-
-
-
-#player executing a command event
-on command:
-    set {_c} to full command
-    set {_commandType} to command
-    set {_player} to player
-    if {_player} is not set:
-        set {_player} to "[Console]"
-    set {_message} to "%{_player}%: /%{_c}%"
-    sendToDiscord({_message}, {commandsChannel})
-
 #prevent players from blocks
 # - ( replace method of achieving this later )
 on break:
@@ -579,27 +566,6 @@ command /apply:
 #===========================================================
         
         
-    
-command /togglepvp:
-    trigger:
-        if {pvp::%player's uuid%} is not set:
-            set {pvp::%player's uuid%} to 1
-            send "pvp toggled off" to player
-        else:
-            if {pvp::%player's uuid%} is 0:
-                set {pvp::%player's uuid%} to 1
-                send "pvp toggled on" to player
-            else:
-                set {pvp::%player's uuid%} to 0
-                send "pvp toggled off" to player
-
-on damage:
-    if damage cause is attack:
-        if {pvp::%victim's uuid%} is 0:
-            cancel event
-        else:
-            if {pvp::%attacker's uuid%} is 0:
-                cancel event
 
 on drop:
     player is not op:

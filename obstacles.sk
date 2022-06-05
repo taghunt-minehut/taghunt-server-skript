@@ -9,6 +9,8 @@ options:
 on join:
     wait 1 tick
     teleport player to {@spawn}
+    set slot 7 of player to red dye named "&cToggle PvP, currently: OFF"
+    set slot 8 of player to eye of ender named "&bCreate Private World, right click to use"
 
 on death:
     if victim is player:
@@ -85,6 +87,40 @@ every tick:
 on inventory click:
     player is not op:
         cancel event
+
+
+command /togglepvp:
+    trigger:
+        if {pvp::%player's uuid%} is not set:
+            set {pvp::%player's uuid%} to 1
+            set {_m} to "pvp toggled on"
+            set slot 8 of player to lime dye named "&aToggle PvP, currently: ON"
+            
+
+        else:
+            if {pvp::%player's uuid%} is 0:
+                set {pvp::%player's uuid%} to 1
+                set {_m} to "pvp toggled on"
+                set slot 7 of player to lime dye named "&aToggle PvP, currently: ON"
+            else:
+                set {pvp::%player's uuid%} to 0
+                set {_m} to "pvp toggled off"
+                set slot 7 of player to red dye named "&cToggle PvP, currently: OFF"
+        ServerMessage({_m}, false, player)
+
+on damage:
+    if damage cause is attack:
+        if {pvp::%victim's uuid%} is 0:
+            cancel event
+        else:
+            if {pvp::%attacker's uuid%} is 0:
+                cancel event
+
+on right click with red dye:
+    execute player command "/togglepvp"
+
+on right click with lime dye:
+    execute player command "/togglepvp"
 
 on swap hand items:
     player is not op:
@@ -184,6 +220,10 @@ command /privateWorld:
             execute console command "/mv clone h %player%"
             execute console command "/mv tp %player% %player%"
             execute console command "/mv confirm"
+            teleport player to location 0.5, 67, 5 in world "%player%"
+            op player
+            execute player command "/hd create %player% &b&l/randomisespawn to generate a new course"
+            deop player
             set {_l} to location 0.5, 65.2, 0.5 in world "%player%"
             teleport player to {_l}
             set {privateWorld.%player%} to name of player
@@ -192,6 +232,7 @@ command /privateWorld:
         else:
             set {_m} to "You are already in a private world!"
             ServerMessage({_m}, false, player)
+        set slot 8 of player to ender pearl named "&bReturn to Main World, right click to use"
 
 command /mainWorld:
     trigger:
@@ -208,6 +249,18 @@ command /mainWorld:
             execute console command "/mv confirm"
             set {_m} to "You are now in the main world!"
             ServerMessage({_m}, false, player)
+        op player
+        execute player command "/hd delete %player%"
+        deop player
+        set slot 8 of player to eye of ender named "&bCreate Private World, right click to use"
+
+on right click with eye of ender:
+    cancel event
+    execute player command "/privateworld"
+
+on right click with ender pearl:
+    cancel event
+    execute player command "/mainworld"
 
 on leave:
     if {privateWorld.%player%} is set:
@@ -265,3 +318,25 @@ on inventory click:
 on join:
     if {privateWorld.%player%} is set:
         execute player command "/mainworld"
+        
+command /vanish:
+    permission: op
+    trigger:
+        if {vanish.%player%} is not set:
+            set {vanish.%player%} to true
+            hide the player from all players
+            execute console command "/gamemode spectator %player%"
+            send "&e%player% left the game" to all players
+        else:
+            delete {vanish.%player%}
+            reveal the player from all players
+            execute console command "/gamemode survival %player%"
+            send "&e%player% joined the game" to all players
+
+command /vtp <player>:
+    permission: op
+    trigger:
+        execute console command "/tp %player% %arg-1%"
+        wait 1 tick
+        execute console command "/gamemode spectator %player%"
+
