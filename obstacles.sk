@@ -161,6 +161,11 @@ command /deleteTime <offline player>:
     trigger:
         delete {bestTime::%uuid of arg-1%}
 
+command /setTime <offline player> <number>:
+    permission: op
+    trigger:
+        set {bestTime::%uuid of arg-1%} to arg-2
+
 function ServerMessage(s: string, all: boolean = true, p: player):
     set {_newstring} to "%{@serverMessage}%%{@serverMessageFormat}%%{_s}%"
     if {_all} is true:
