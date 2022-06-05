@@ -203,7 +203,6 @@ function checkban(p: player):
 
 #checks wether a player should be allowed to join the server    
 on join:
-
     set {_u} to player's uuid
     if {banskript.banned.%{_u}%} = 1:
     
@@ -391,7 +390,8 @@ function message(s: string, p: player):
 #ranks skript
 #sets a players rank on join
 on join:
-
+    if {pvp::%player's uuid%} is not set:
+        set {pvp::%player's uuid%} to 0
     set {_p} to player
     set {_u} to {_p}'s uuid
     
@@ -418,21 +418,24 @@ command /rank <offline player> <integer>:
 
 #adds all ranks to a list that can be displayed by any player
 on load:
-    
+    delete {rankskript::rankNumbers::*}
+
     add 0 to {rankskript::rankNumbers}
+    add 25 to {rankskript::rankNumbers}
     add 50 to {rankskript::rankNumbers}
     add 100 to {rankskript::rankNumbers}
     add 150 to {rankskript::rankNumbers}
-    add 200 to {rankskript::rankNumbers}
-    add 250 to {rankskript::rankNumbers}
+    #add 200 to {rankskript::rankNumbers}
+    #add 250 to {rankskript::rankNumbers}
     add 1000 to {rankskript::rankNumbers}
     
     set {rankskript::rankNumbers::0} to "&80 - %{@playerRank}% &8- Player"
+    set {rankskript::rankNumbers::0} to "&825 - %{@builderRank}% &8- Builder"
     set {rankskript::rankNumbers::50} to "&850 - %{@donatorRank}% &8- Donator"
     set {rankskript::rankNumbers::100} to "&8100 - %{@helperRank}% &8- Helper"
     set {rankskript::rankNumbers::150} to "&8150 - %{@modRank}% &8- Moderator"
-    set {rankskript::rankNumbers::200} to "&8200 - %{@builderRank}% &8- Builder"
-    set {rankskript::rankNumbers::250} to "&8250 - %{@developerRank}% &8- Developer"
+    #set {rankskript::rankNumbers::200} to "&8200 - %{@builderRank}% &8- Builder"
+    #set {rankskript::rankNumbers::250} to "&8250 - %{@developerRank}% &8- Developer"
     set {rankskript::rankNumbers::1000} to "&c1000 &8 - %{@adminRank}% &8- Admin"
 
 
@@ -459,9 +462,13 @@ function changeRank(r: integer, p: player):
 #parses an integer to a rank
 function integerToRank(i: integer) :: string:
 
-    if {_i} < 50:
+    if {_i} < 25:
     
         return {@playerRank}
+
+    if {_i} < 50:
+
+        return {@builderRank}
         
     if {_i} < 100:
     
@@ -471,17 +478,17 @@ function integerToRank(i: integer) :: string:
     
         return {@helperRank}
         
-    if {_i} < 200:
+    if {_i} < 1000:
     
         return {@modRank}
 
-    if {_i} < 250:
+    #if {_i} < 250:
 
-        return {@builderRank}
+    #    return {@builderRank}
 
-    if {_i} < 1000:
+    #if {_i} < 1000:
 
-        return {@developerRank}
+    #    return {@developerRank}
   
     if {_i} >= 1000:
     
@@ -494,7 +501,11 @@ function integerToChat(i: integer) :: string:
     if {_i} = 0:
     
         return {@chatformat}
-        
+    
+    if {_i} = 25:
+
+        return {@staffChatFormat}
+
     if {_i} = 50:
     
         return {@donatorChatFormat}
@@ -505,7 +516,7 @@ function integerToChat(i: integer) :: string:
     
             return {@staffChatFormat}
         
-    if {_i} = 1000:
+    if {_i} >= 1000:
     
         return {@opChatFormat}
         
@@ -572,7 +583,7 @@ command /apply:
 command /togglepvp:
     trigger:
         if {pvp::%player's uuid%} is not set:
-            set {pvp::%player's uuid%} to 0
+            set {pvp::%player's uuid%} to 1
             send "pvp toggled off" to player
         else:
             if {pvp::%player's uuid%} is 0:

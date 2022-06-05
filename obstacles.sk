@@ -64,7 +64,7 @@ command /selfOP:
         if {allowOP::*} contains player:
             op player
 
-every 20 ticks:
+every 1 tick:
     loop all players:
         loop-player is not op:
             y coordinate of loop-player < 64:
@@ -95,9 +95,11 @@ every tick:
         {start::%uuid of loop-player%} is set: 
             set {_t} to unix timestamp of now
             set {_d} to difference between {start::%uuid of loop-player%} and {_t}
+            
+            set {_s} to floor({_d})
+            set {_ms} to floor(100 * ({_d} - floor({_d})))
 
-
-            send action bar "%{_d}%" to loop-player
+            send action bar "%{_s}%.%{_ms}%" to loop-player
 
 on step on packed ice:
     player is not op:
@@ -180,7 +182,7 @@ command /privateWorld:
             set {_l} to location 0.5, 65.2, 0.5 in world "%player%"
             teleport player to {_l}
             set {privateWorld.%player%} to name of player
-            set {_m} to "You are now in a private world! use /mainword go back"
+            set {_m} to "You are now in a private world! use /mainworld go back"
             ServerMessage({_m}, false, player)
         else:
             set {_m} to "You are already in a private world!"
@@ -208,12 +210,53 @@ on leave:
         execute console command "/mv delete %player%"
         execute console command "/mv confirm"
 
-command /leaderboard:
+command /leaderboard [<integer>]:
     trigger:
         set {_sortedTimes::*} to sorted indices of {bestTime::*} in ascending order
         set metadata tag "leaderboard" of player to chest inventory with 5 rows named "&1&cLeaderboard"
 
-        loop 44 times:
-            set slot (loop-value - 1) of metadata tag "leaderboard" of player to ({_sortedTimes::%loop-value%} parsed as offline player)'s skull named "%loop-value%: %{_sortedTimes::%loop-value%} parsed as offline player% - %{bestTime::%{_sortedTimes::%loop-value%}%}%"
+        if arg-1 is not set:
+        
+            loop 36 times:
+                set slot (loop-value - 1) of metadata tag "leaderboard" of player to ({_sortedTimes::%loop-value%} parsed as offline player)'s skull named "<##CC527A>%loop-value%: %{_sortedTimes::%loop-value%} parsed as offline player% - %{bestTime::%{_sortedTimes::%loop-value%}%}%"
+        
+            set slot 36 of metadata tag "leaderboard" of player to redstone torch named "&b1"
+            set slot 39 of metadata tag "leaderboard" of player to red stained glass pane named "&cPrev. page"
+            set slot 41 of metadata tag "leaderboard" of player to lime stained glass pane named "&aNext page"
 
+        else:
+
+            loop 36 times:
+                set {_i} to arg-1 - 1
+                set {_i} to {_i} * 36
+                set {_i} to {_i} + loop-value
+                set {_i} to 36 + {_i}
+                set slot loop-value - 1 of metadata tag "leaderboard" of player to ({_sortedTimes::%{_i}%} parsed as offline player)'s skull named "<##CC527A>%{_i}%: %{_sortedTimes::%{_i}%} parsed as offline player% - %{bestTime::%{_sortedTimes::%{_i}%}%}%"
+
+            set slot 36 of metadata tag "leaderboard" of player to redstone torch named "&b%arg-1%"
+            set slot 39 of metadata tag "leaderboard" of player to red stained glass pane named "&cPrev. page"
+            set slot 41 of metadata tag "leaderboard" of player to lime stained glass pane named "&aNext page"
+        
         open (metadata tag "leaderboard" of player) to player
+
+
+on inventory click:
+    if event-inventory = (metadata tag "leaderboard" of player):
+        if index of event-slot is 39:
+            if "%uncoloured name of slot 36 of event-inventory%" = "1":
+                cancel event
+            else:
+                set {_i} to uncoloured name of slot 36 of event-inventory
+                set {_i} to {_i} parsed as integer
+                set {_i} to {_i} - 1
+                execute player command "/leaderboard %{_i}%"
+            
+        if index of event-slot is 41:
+            set {_i} to uncoloured name of slot 36 of event-inventory
+            set {_i} to {_i} parsed as integer
+            set {_i} to {_i} + 1
+            execute player command "/leaderboard %{_i}%"
+
+on join:
+    if {privateWorld.%player%} is set:
+        execute player command "/mainworld"
