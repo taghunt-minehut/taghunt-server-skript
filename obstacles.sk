@@ -25,10 +25,12 @@ on death:
         delete {start::%uuid of victim%}
 
 #function to generate course, l is the starting coordinate for the bottom left edge n is number of sections.
-function generateCourse(l: location, n: integer, s: integer, p: player):
+function generateCourse(l: location, n: integer, s: integer, p: player) :: string:
+    set {_code} to ""
     #loop n times and each time add 25 to z coordinate, pick random obstacle and clone to location.
     loop {_n} times:
         set {_c} to (random integer between 1 and {@numSections}) * {@multiplier} + 17
+        set {_code} to "%{_code}%%({_c} - 17)/{@multiplier}%"
         set {_l1} to {_c}
         set {_c} to {_c} + 19
         set {_l2} to {_c}
@@ -40,15 +42,16 @@ function generateCourse(l: location, n: integer, s: integer, p: player):
         add 20 to z coordinate of {_l}
         add {_s} to z coordinate of {_l}
     execute console command "/clone 31 68 32 35 71 36 %round(x coordinate of {_l})% %round(y coordinate of {_l})% %round(z coordinate of {_l})%"
+    return {_code}
 
 command /randomiseSpawn:
     trigger:
         set {_u} to uuid of player
         if {privateWorld.%player%} is set:
-            generateCourse(location -4, 64, 8 in world "%player%", 3, 2, player)
+            set {worldcode::%player%} to generateCourse(location -4, 64, 8 in world "%player%", 3, 2, player)
         else:
             if {rankskript.rank.%{_u}%} >= 200:
-                generateCourse({@spawnCourseLoc}, 3, 2, player)
+                set {mainworldcode} to generateCourse({@spawnCourseLoc}, 3, 2, player)
             else:
                 set {_m} to "You are in the main world. If you want to randomise the course you can do so in your own world with /privateworld!"
                 ServerMessage({_m}, false, player)
@@ -157,6 +160,10 @@ on step on packed ice:
             else:
                 if {bestTime::%uuid of player%} > {_d}:
                     set {bestTime::%uuid of player%} to {_d}
+                    if {privateworld.%player%} is not set:
+                        set {bestMap::%uuid of player%} to {worldcode}
+                    else:
+                        set {bestMap::%uuid of player%} to {worldcode::%player%}
         if {privateWorld.%player%} is not set:
             teleport player to {@spawn}
         else:
@@ -229,6 +236,7 @@ command /privateWorld:
             set {privateWorld.%player%} to name of player
             set {_m} to "You are now in a private world! use /mainworld go back"
             ServerMessage({_m}, false, player)
+            set {worldcode::%player%} to "144"
         else:
             set {_m} to "You are already in a private world!"
             ServerMessage({_m}, false, player)
@@ -272,11 +280,12 @@ command /leaderboard [<integer>]:
     trigger:
         set {_sortedTimes::*} to sorted indices of {bestTime::*} in ascending order
         set metadata tag "leaderboard" of player to chest inventory with 5 rows named "&1&cLeaderboard"
+        set {_q} to "???"
 
         if arg-1 is not set:
         
             loop 36 times:
-                set slot (loop-value - 1) of metadata tag "leaderboard" of player to ({_sortedTimes::%loop-value%} parsed as offline player)'s skull named "<##CC527A>%loop-value%: %{_sortedTimes::%loop-value%} parsed as offline player% - %{bestTime::%{_sortedTimes::%loop-value%}%}%"
+                set slot (loop-value - 1) of metadata tag "leaderboard" of player to ({_sortedTimes::%loop-value%} parsed as offline player)'s skull named "<##CC527A>%loop-value%: %{_sortedTimes::%loop-value%} parsed as offline player% - %{bestTime::%{_sortedTimes::%loop-value%}%}%. Course: %{bestMap::%{_sortedTimes::%loop-value%}%} ? {_q}%"
         
             set slot 36 of metadata tag "leaderboard" of player to redstone torch named "&b1"
             set slot 39 of metadata tag "leaderboard" of player to red stained glass pane named "&cPrev. page"
@@ -289,7 +298,7 @@ command /leaderboard [<integer>]:
                 set {_i} to {_i} * 36
                 set {_i} to {_i} + loop-value
                 set {_i} to 36 + {_i}
-                set slot loop-value - 1 of metadata tag "leaderboard" of player to ({_sortedTimes::%{_i}%} parsed as offline player)'s skull named "<##CC527A>%{_i}%: %{_sortedTimes::%{_i}%} parsed as offline player% - %{bestTime::%{_sortedTimes::%{_i}%}%}%"
+                set slot loop-value - 1 of metadata tag "leaderboard" of player to ({_sortedTimes::%{_i}%} parsed as offline player)'s skull named "<##CC527A>%{_i}%: %{_sortedTimes::%{_i}%} parsed as offline player% - %{bestTime::%{_sortedTimes::%{_i}%}%}%. Course: %{bestMap::%{_sortedTimes::%{_i}%}%} ? {_q}%"
 
             set slot 36 of metadata tag "leaderboard" of player to redstone torch named "&b%arg-1%"
             set slot 39 of metadata tag "leaderboard" of player to red stained glass pane named "&cPrev. page"
@@ -301,7 +310,7 @@ command /leaderboard [<integer>]:
 on inventory click:
     if event-inventory = (metadata tag "leaderboard" of player):
         if index of event-slot is 39:
-            if "%uncoloured name of slot 36 of event-inventory%" = "1":
+            if uncoloured name of slot 36 of event-inventory = "1":
                 cancel event
             else:
                 set {_i} to uncoloured name of slot 36 of event-inventory
@@ -340,3 +349,10 @@ command /vtp <player>:
         wait 1 tick
         execute console command "/gamemode spectator %player%"
 
+
+command /getcode:
+    trigger:
+        if {privateWorld.%player%} is not set:
+            send "%{mainworldcode}%" to player
+        else:
+            send "%{worldcode::%player%}%" to player

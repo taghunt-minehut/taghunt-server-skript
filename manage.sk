@@ -64,7 +64,7 @@ on place:
 
 #opens the gui that can be used to tempban players
 command /tempban <player>:
-    aliases: /ban, /b
+    aliases: /b
     trigger:
         set {_u} to uuid of player
         set {_u2} to uuid of arg-1
