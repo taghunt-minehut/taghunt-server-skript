@@ -41,7 +41,9 @@ function generateCourse(l: location, n: integer, s: integer, p: player) :: strin
 
         add 20 to z coordinate of {_l}
         add {_s} to z coordinate of {_l}
-    execute console command "/clone 31 68 32 35 71 36 %round(x coordinate of {_l})% %round(y coordinate of {_l})% %round(z coordinate of {_l})%"
+    op {_p}
+    execute {_p} command "/clone 31 68 32 35 71 36 %round(x coordinate of {_l})% %round(y coordinate of {_l})% %round(z coordinate of {_l})%"
+    deop {_p}
     return {_code}
 
 command /randomiseSpawn:
@@ -154,16 +156,30 @@ on step on packed ice:
             ServerMessage({_m}, false, player)
 
             delete {start::%uuid of player%}
-
+            
             if {bestTime::%uuid of player%} is not set:
-                set {bestTime::%uuid of player%} to {_d}
+                if {privateWorld.%player%} is not set:
+                    set {bestTime::%uuid of player%} to {_d}
+                else:
+                    if length of {worldcode::%player%} > 2:
+                        set {bestTime::%uuid of player%} to {_d}
+                    else:
+                        set {_m} to "your record was not saved because your course has less than 3 obstacles"
+                        ServerMessage({_m}, false, player)
+
             else:
                 if {bestTime::%uuid of player%} > {_d}:
-                    set {bestTime::%uuid of player%} to {_d}
                     if {privateworld.%player%} is not set:
+                        set {bestTime::%uuid of player%} to {_d}
                         set {bestMap::%uuid of player%} to {mainworldcode}
                     else:
-                        set {bestMap::%uuid of player%} to {worldcode::%player%}
+                        if length of {worldcode::%player%} > 2:
+                            set {bestTime::%uuid of player%} to {_d}
+                            set {bestMap::%uuid of player%} to {worldcode::%player%}
+                        else:
+                            set {_m} to "your record was not saved because your course has less than 3 obstacles"
+                            ServerMessage({_m}, false, player)
+
         if {privateWorld.%player%} is not set:
             teleport player to {@spawn}
         else:
@@ -241,6 +257,7 @@ command /privateWorld:
             set {_m} to "You are already in a private world!"
             ServerMessage({_m}, false, player)
         set slot 8 of player to ender pearl named "&bReturn to Main World, right click to use"
+        set slot 6 of player to redstone dust named "&cCustomise Your Course, right click to use"
 
 command /mainWorld:
     trigger:
@@ -261,6 +278,7 @@ command /mainWorld:
         execute player command "/hd delete %player%"
         deop player
         set slot 8 of player to eye of ender named "&bCreate Private World, right click to use"
+        set slot 6 of player to redstone ore named "&cCreate a Private World to use!"
 
 on right click with eye of ender:
     cancel event
@@ -356,3 +374,65 @@ command /getcode:
             send "%{mainworldcode}%" to player
         else:
             send "%{worldcode::%player%}%" to player
+
+
+function createCourse(l: location, code: string, s: integer, p: player):
+    set {_n::*} to {_code} split at ""
+    loop {_n::*}:
+        if loop-value is not "":
+            set {_c} to (loop-value parsed as integer) * {@multiplier} + 17
+            set {_l1} to {_c}
+            set {_c} to {_c} + 19
+            set {_l2} to {_c}
+            op {_p}
+            execute {_p} command "/clone 29 68 %{_l1}% 37 76 %{_l2}% %floor(x coordinate of {_l})% %floor(y coordinate of {_l})% %floor(z coordinate of {_l})%"
+            deop {_p}
+            add 20 to z coordinate of {_l}
+            add {_s} to z coordinate of {_l}
+    op {_p}
+    execute {_p} command "/clone 31 68 32 35 71 36 %floor(x coordinate of {_l})% %floor(y coordinate of {_l})% %floor(z coordinate of {_l})%"
+    deop {_p}
+
+
+on right click with redstone dust:
+    set {tempcode::%player%} to ""
+    set metadata tag "customise" of player to chest inventory with 5 rows named "<##CC527A>Select Obstacles"
+    
+    set slot 0 of metadata tag "customise" of player to sandstone named "<##CC527A>1: Blocks"
+    set slot 1 of metadata tag "customise" of player to sandstone named "<##CC527A>2: Field of Pillars"
+    set slot 2 of metadata tag "customise" of player to sandstone named "<##CC527A>3: The Walls"
+    set slot 3 of metadata tag "customise" of player to sandstone named "<##CC527A>4: The Great Wall"
+    set slot 4 of metadata tag "customise" of player to sandstone named "<##CC527A>5: Prison Walls"
+    set slot 36 of metadata tag "customise" of player to red stained glass pane named "&cCancel"
+    set slot 44 of metadata tag "customise" of player to lime stained glass pane named "&aConfirm"
+
+    open (metadata tag "customise" of player) to player
+
+on inventory click:
+    if event-inventory = (metadata tag "customise" of player):
+        if length of {tempcode::%player%} < 7:
+            if index of event-slot is 0:
+                set {tempcode::%player%} to "%{tempcode::%player%}%1"
+            if index of event-slot is 1:
+                set {tempcode::%player%} to "%{tempcode::%player%}%2"
+            if index of event-slot is 2:
+                set {tempcode::%player%} to "%{tempcode::%player%}%3"
+            if index of event-slot is 3:
+                set {tempcode::%player%} to "%{tempcode::%player%}%4"
+            if index of event-slot is 4:
+                set {tempcode::%player%} to "%{tempcode::%player%}%5"
+        else:
+            set {_m} to "Course at max length!"
+            ServerMessage({_m}, false, player)
+
+        if index of event-slot is 36:
+            delete {tempcode::%player%}
+            close player's inventory
+        
+        if index of event-slot is 44:
+            set {_l} to location -4, 64, 8 in world "%player%" 
+            createCourse({_l}, {tempcode::%player%}, 2, player)
+            set {worldcode::%player%} to {tempcode::%player%}
+            delete {tempcode::%player%}
+            close player's inventory
+
