@@ -161,7 +161,7 @@ on step on packed ice:
                 if {bestTime::%uuid of player%} > {_d}:
                     set {bestTime::%uuid of player%} to {_d}
                     if {privateworld.%player%} is not set:
-                        set {bestMap::%uuid of player%} to {worldcode}
+                        set {bestMap::%uuid of player%} to {mainworldcode}
                     else:
                         set {bestMap::%uuid of player%} to {worldcode::%player%}
         if {privateWorld.%player%} is not set:
