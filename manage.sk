@@ -47,14 +47,17 @@ on place:
                     if y coordinate of event-block > 78:
                         cancel event
                     else:
-                        wait 15 ticks
-                        set block at event-block to yellow wool
-                        wait 10 ticks
-                        set block at event-block to orange wool
-                        wait 5 ticks
-                        set block at event-block to red wool
-                        wait 3 ticks
-                        set block at event-block to air
+                        if event-block is redstone ore:
+                            cancel event
+                        else:
+                            wait 15 ticks
+                            set block at event-block to yellow wool
+                            wait 10 ticks
+                            set block at event-block to orange wool
+                            wait 5 ticks
+                            set block at event-block to red wool
+                            wait 3 ticks
+                            set block at event-block to air
 
 
 

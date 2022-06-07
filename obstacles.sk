@@ -11,6 +11,7 @@ on join:
     teleport player to {@spawn}
     set slot 7 of player to red dye named "&cToggle PvP, currently: OFF"
     set slot 8 of player to eye of ender named "&bCreate Private World, right click to use"
+    set slot 6 of player to redstone ore named "&cCreate a Private World to use!"
 
 on death:
     if victim is player:
